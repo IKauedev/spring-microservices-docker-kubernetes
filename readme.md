@@ -1,134 +1,140 @@
-[![GitHub CI Status](https://github.com/IKauedev/spring-microservices-docker-kubernetes/workflows/ci/badge.svg)](https://github.com/IKauedev/spring-microservices-docker-kubernetes/actions?query=workflow%3Aci)
-[![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2FIKauedev%2Fspring-microservices-docker-kubernetes&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false)](https://hits.seeyoufarm.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-### Java Microservices with Spring Boot and Spring Cloud Kubernetes
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1.1-6DB33F)](https://spring.io/projects/spring-boot)
+[![Spring Cloud](https://img.shields.io/badge/Spring%20Cloud-2025.1%20Oakwood-6DB33F)](https://spring.io/projects/spring-cloud)
+[![Java](https://img.shields.io/badge/Java-17-orange)](https://adoptium.net/)
 
-This repository is a fork of Andriy Kalashnykov's [spring-microservices-k8s](https://github.com/AndriyKalashnykov/spring-microservices-k8s), which accompanies the `Tanzu Development Center` article - [Microservices with Spring Cloud Kubernetes Reference Architecture](https://tanzu.vmware.com/developer/guides/app-enhancements-spring-k8s//). This fork has been modernized to run on **Spring Boot 4.1** and **Spring Cloud 2025.1 (Oakwood)**, replacing dependencies that were discontinued in the original (Netflix Zuul, Netflix Ribbon, Spring Cloud Sleuth, Springfox) with their current equivalents (Spring Cloud Gateway, Spring Cloud LoadBalancer, Micrometer Tracing, springdoc-openapi) and moving to Java 17.
+# spring-microservices-docker-kubernetes
 
-This Reference Architecture demonstrates design, development, and deployment of
-[Spring Boot](https://spring.io/projects/spring-boot) microservices on
-Kubernetes. Each section covers architectural recommendations and configuration
-for each concern when applicable.
+A small reference stack of four Spring Boot microservices — **Employee**, **Department**, **Organization** and an edge **Gateway** — wired together with Spring Cloud, backed by MongoDB, and packaged to run on Kubernetes.
 
-High-level key recommendations:
+It exists mainly as a hands-on playground for the plumbing every microservice fleet needs: service discovery, client-side load balancing, externalized config, health probes, metrics, tracing and API docs — without any real business logic getting in the way.
 
-- Consider Best Practices in Cloud Native Applications and [The 12
-  Factor App](https://12factor.net/)
-- Keep each microservice in a separate [Maven](https://maven.apache.org/) or
-  [Gradle](https://docs.gradle.org/current/userguide/userguide.html) project
-- Prefer using dependencies when inheriting from parent project instead of using
-  relative path
-- Use [Spring Initializr](https://start.spring.io/) a web application that can
-  generate a Spring Boot project structure, fill in your project details, pick
-  your options, and download a bundled up project
+> This project is a fork of [AndriyKalashnykov/spring-microservices-k8s](https://github.com/AndriyKalashnykov/spring-microservices-k8s) (originally written for the Tanzu Development Center), migrated from Spring Boot 2.3 / Java 8-11 to **Spring Boot 4.1.1** and **Spring Cloud 2025.1 (Oakwood)** on **Java 17**. Netflix Zuul, Netflix Ribbon, Spring Cloud Sleuth and Springfox — all discontinued — were replaced with Spring Cloud Gateway, Spring Cloud LoadBalancer, Micrometer Tracing and springdoc-openapi respectively.
 
-This architecture demonstrates a complex Cloud Native application that
-addresses following concerns:
+## Architecture
 
-- Externalized configuration using ConfigMaps, Secrets, and PropertySource
-- Kubernetes API server access using ServiceAccounts, Roles, and RoleBindings
-- Health checks using Application Probes
-  - readinessProbe
-  - livenessProbe
-  - startupProbe
-- Reporting application state using Spring Boot Actuators
-- Service discovery across namespaces using DiscoveryClient
-- Exposing API documentation using Swagger UI
-- Building a Docker image using best practices
-- Layering JARs using the Spring Boot plugin
-- Observing the application using Prometheus exporters
-### Pre-requisites
+```mermaid
+flowchart LR
+    Client(["client"]) --> Gateway["gateway-service\n(Spring Cloud Gateway)"]
+    Gateway -- "/employee/**" --> Employee["employee-service"]
+    Gateway -- "/department/**" --> Department["department-service"]
+    Gateway -- "/organization/**" --> Organization["organization-service"]
+    Department -- "Feign: employee" --> Employee
+    Organization -- "Feign: department" --> Department
+    Organization -- "Feign: employee" --> Employee
+    Employee --> Mongo[("MongoDB")]
+    Department --> Mongo
+    Organization --> Mongo
 
-- OS: Mac or Linux
-- [Docker](https://docs.docker.com/install/)
-- [Minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/)
-- [Virtualbox](https://www.virtualbox.org/manual/ch02.html)
-- [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
-- [sdkman](https://sdkman.io/install)
+    subgraph K8s["Kubernetes cluster"]
+      Gateway
+      Employee
+      Department
+      Organization
+      Mongo
+    end
+```
 
-    JDK 17.x
+Every service registers itself and discovers its peers through the Kubernetes API (`spring-cloud-kubernetes-fabric8`) — there is no Eureka, Consul or Zookeeper in this stack. The gateway routes requests purely by service name via Spring Cloud Gateway's discovery locator, so adding a fifth service to the cluster requires no gateway configuration change.
 
-    ```shell
-    sdk install java 17.0.16-tem
-    sdk use java 17.0.16-tem
+## Services
 
-    ```
-- [Apache Maven](https://maven.apache.org/install.html)
-- [Curl](https://help.ubidots.com/en/articles/2165289-learn-how-to-install-run-curl-on-windows-macosx-linux)
-- [HTTPie](https://httpie.org/doc#installation)
-- [tree](http://mama.indstate.edu/users/ice/tree/)
+| Service               | Role                                            | Talks to                     | Docs (once running)         |
+|-----------------------|--------------------------------------------------|-------------------------------|------------------------------|
+| `gateway-service`     | Edge router / reverse proxy                      | all of the below (discovery)  | `/actuator`                  |
+| `employee-service`    | CRUD for employees, backed by MongoDB            | —                              | `/swagger-ui.html`           |
+| `department-service`  | CRUD for departments; enriches with employee data| `employee-service` (Feign)     | `/swagger-ui.html`           |
+| `organization-service`| CRUD for organizations; enriches with dept/employee data | `department-service`, `employee-service` (Feign) | `/swagger-ui.html` |
 
-### Clone repository
+All four expose Spring Boot Actuator on the same port as the app (`health`, `info`, `metrics`, `prometheus`).
+
+## Tech stack
+
+- **Runtime**: Java 17, Spring Boot 4.1.1, Spring Cloud 2025.1.2
+- **Discovery & routing**: `spring-cloud-starter-kubernetes-fabric8-all`, Spring Cloud Gateway, Spring Cloud LoadBalancer, Spring Cloud OpenFeign
+- **Persistence**: MongoDB (`spring-boot-starter-data-mongodb`)
+- **Observability**: Micrometer + Prometheus registry, Micrometer Tracing (Brave bridge)
+- **API docs**: springdoc-openapi (OpenAPI 3 / Swagger UI)
+- **Packaging**: layered Spring Boot JARs on distroless Java 17 base images
+- **Orchestration**: Kubernetes manifests under [`k8s/`](k8s), driven by the shell scripts under [`scripts/`](scripts)
+
+## Repository layout
+
+```
+.
+├── employee-service/       # Spring Boot app + Dockerfile
+├── department-service/     # Spring Boot app + Dockerfile
+├── organization-service/   # Spring Boot app + Dockerfile
+├── gateway-service/        # Spring Boot app + Dockerfile
+├── k8s/                    # Deployments, Services, ConfigMaps, Secrets, RBAC, Ingress
+├── scripts/                # Minikube lifecycle, build/push, log-tailing, sample data
+└── pom.xml                 # Reactor parent (aggregates the four modules)
+```
+
+## Prerequisites
+
+- Docker
+- [Minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/) + a hypervisor (e.g. VirtualBox)
+- `kubectl`
+- JDK 17 (via [sdkman](https://sdkman.io/install): `sdk install java 17.0.16-tem`)
+- Apache Maven
+- `curl` / [HTTPie](https://httpie.org/) for the sample requests below
+
+## Build
 
 ```bash
 git clone git@github.com:IKauedev/spring-microservices-docker-kubernetes.git
+cd spring-microservices-docker-kubernetes
+mvn clean package
 ```
 
-### Start Kubernetes cluster
+This builds and tests all four modules and produces a layered, executable JAR per service under each `target/` directory.
+
+## Run on Kubernetes
+
+The `scripts/` directory wraps the whole lifecycle around a dedicated Minikube profile:
 
 ```bash
-cd ./spring-microservices-docker-kubernetes/scripts/
-./start-cluster.sh
+cd scripts/
+./start-cluster.sh     # boot the Minikube profile
+./setup-cluster.sh     # namespaces, RBAC, secrets
+./install-all.sh       # build images and apply the k8s manifests
+./populate-data.sh     # seed sample employees/departments/organizations
+./gateway-open.sh      # open the Swagger UI through the gateway
 ```
 
-### Configure Kubernetes cluster
+Tear down with:
 
 ```bash
-cd ./spring-microservices-docker-kubernetes/scripts/
-./setup-cluster.sh
+./delete-all.sh        # remove the app's k8s resources
+./destroy-cluster.sh    # remove namespaces/RBAC
+./stop-cluster.sh      # stop the Minikube profile
 ```
 
-### Deploy application to Kubernetes cluster
+`./employee-log.sh`, `./department-log.sh` and `./organization-log.sh` tail a given service's pod logs.
+
+## Talking to the API
+
+Once deployed, each service is reachable directly (`minikube service <name> --url -n <namespace>`) or through the gateway. A couple of examples against `employee-service`:
 
 ```bash
-cd ./spring-microservices-docker-kubernetes/scripts/
-./install-all.sh
+# create
+curl -X POST "$EMPLOYEE_URL/" -H "Content-Type: application/json" \
+  -d '{"id":"1","name":"Smith","age":25,"position":"engineer","departmentId":1,"organizationId":1}'
+
+# read
+curl "$EMPLOYEE_URL/"
 ```
 
-### Polulate test data
+See [`scripts/populate-data.sh`](scripts/populate-data.sh) for the full set of sample payloads across employee, department and organization.
 
-```bash
-cd ./spring-microservices-docker-kubernetes/scripts/
-./populate-data.sh
-```
+## Observability
 
-### Observe Employee service logs
+- **Health / readiness / liveness**: `GET /actuator/health` (wired into the Kubernetes probes in `k8s/*-deployment.yaml`)
+- **Metrics**: `GET /actuator/prometheus` (Micrometer's Prometheus registry)
+- **Tracing**: request-scoped trace/span IDs via Micrometer Tracing, correlated in the log pattern configured in each `*-configmap.yaml`
+- **API docs**: `GET /swagger-ui.html` and `GET /v3/api-docs` on each of the three domain services
 
-```bash
-cd ./spring-microservices-docker-kubernetes/scripts/
-./employee-log.sh
-```
+## License
 
-### Open Swagger UI web interface
-
-```bash
-cd ./spring-microservices-docker-kubernetes/scripts/
-./gateway-open.sh
-```
-
-### Undeploy application from Kubernetes cluster
-
-```bash
-cd ./spring-microservices-docker-kubernetes/scripts/
-./delete-all.sh
-```
-
-### Delete Application specific Kubernetes cluster configuration (namespaces, clusterRole, etc.)
-
-```bash
-cd ./spring-microservices-docker-kubernetes/scripts/
-./destroy-cluster.sh
-```
-
-### Stop Kubernetes cluster
-
-```bash
-cd ./spring-microservices-docker-kubernetes/scripts/
-./stop-cluster.sh
-```
-
-
-## Stargazers over time
-
-[![Stargazers over time](https://starchart.cc/IKauedev/spring-microservices-docker-kubernetes.svg)](https://starchart.cc/IKauedev/spring-microservices-docker-kubernetes)
-
+MIT — see [LICENSE](LICENSE). The original copyright notice from the upstream project is preserved alongside this fork's, as required by the MIT terms.
