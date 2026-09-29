@@ -118,6 +118,28 @@ Tear down with:
 
 `./employee-log.sh`, `./department-log.sh` and `./organization-log.sh` tail a given service's pod logs.
 
+## Run locally with Docker Compose
+
+For a quick, cluster-free way to run the stack, [`docker-compose.yml`](docker-compose.yml) builds and runs
+the four apps plus MongoDB with plain Docker networking:
+
+```bash
+docker compose up --build
+```
+
+| Service                | URL                    |
+|-------------------------|-------------------------|
+| Gateway                 | http://localhost:8080  |
+| Employee (direct)       | http://localhost:8081  |
+| Department (direct)     | http://localhost:8082  |
+| Organization (direct)   | http://localhost:8083  |
+| MongoDB                 | localhost:27017        |
+
+Kubernetes service discovery isn't available outside a cluster, so this file disables
+`spring.cloud.kubernetes` and wires the same routing statically instead: Feign clients get their
+target services from Spring Cloud's Simple Discovery Client, and the gateway gets a fixed
+route per service instead of the discovery locator used in `k8s/gateway/configmap.yaml`.
+
 ## Talking to the API
 
 Once deployed, each service is reachable directly (`minikube service <name> --url -n <namespace>`) or through the gateway. A couple of examples against `employee-service`:
