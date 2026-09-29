@@ -30,10 +30,7 @@ public class DepartmentApplication {
     }
 
     @Bean
-    MeterRegistryCustomizer<MeterRegistry> meterRegistryCustomizer(MeterRegistry meterRegistry){
-        return registry -> {
-            meterRegistry.config()
-                    .commonTags("application", "department");
-        };
+    MeterRegistryCustomizer<MeterRegistry> meterRegistryCustomizer() {
+        return registry -> registry.config().commonTags("application", "department");
     }
 }

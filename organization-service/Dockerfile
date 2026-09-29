@@ -14,9 +14,11 @@ WORKDIR /tmp/
 # build the project
 RUN mvn clean package
 
-# extract JAR Layers
+# extract JAR layers (the old "layertools" jarmode was removed in Spring
+# Boot 4.1; "tools" is its replacement)
 WORKDIR /tmp/target
-RUN java -Djarmode=layertools -jar *.jar extract
+RUN cp *.jar application.jar
+RUN java -Djarmode=tools -jar application.jar extract --layers --destination extracted
 
 # runtime image
 FROM gcr.io/distroless/java17-debian13:nonroot as runtime
@@ -25,10 +27,10 @@ USER nonroot:nonroot
 WORKDIR /application
 
 # copy layers from build image to runtime image as nonroot user
-COPY --from=build --chown=nonroot:nonroot /tmp/target/dependencies/ ./
-COPY --from=build --chown=nonroot:nonroot /tmp/target/snapshot-dependencies/ ./
-COPY --from=build --chown=nonroot:nonroot /tmp/target/spring-boot-loader/ ./
-COPY --from=build --chown=nonroot:nonroot /tmp/target/application/ ./
+COPY --from=build --chown=nonroot:nonroot /tmp/target/extracted/dependencies/ ./
+COPY --from=build --chown=nonroot:nonroot /tmp/target/extracted/snapshot-dependencies/ ./
+COPY --from=build --chown=nonroot:nonroot /tmp/target/extracted/spring-boot-loader/ ./
+COPY --from=build --chown=nonroot:nonroot /tmp/target/extracted/application/ ./
 
 EXPOSE 8080
 
@@ -39,4 +41,4 @@ ENV _JAVA_OPTIONS "-XX:MinRAMPercentage=60.0 -XX:MaxRAMPercentage=90.0 \
 -Dspring.profiles.active=default"
 
 # set entrypoint to layered Spring Boot application
-ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]
+ENTRYPOINT ["java", "-jar", "application.jar"]

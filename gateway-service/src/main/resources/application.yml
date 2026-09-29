@@ -1,9 +1,15 @@
 spring:
+  config:
+    # ConfigMap/Secret loading is opt-in via spring.config.import since
+    # Spring Cloud stopped processing bootstrap.yml/context by default
+    import: "optional:kubernetes:"
   application:
     name: gateway
   cloud:
     gateway:
-      discovery:
-        locator:
-          enabled: true
-          lower-case-service-id: true
+      server:
+        webflux:
+          discovery:
+            locator:
+              enabled: true
+              lower-case-service-id: true

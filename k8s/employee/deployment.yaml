@@ -22,10 +22,10 @@ spec:
           resources:
             requests:
               cpu: "0.2"
-              memory: 300Mi
+              memory: 384Mi
             limits:
               cpu: "1.0"
-              memory: 300Mi
+              memory: 512Mi
           readinessProbe:
             httpGet:
               port: 8080

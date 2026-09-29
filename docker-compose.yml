@@ -10,8 +10,9 @@ x-no-kubernetes: &no-kubernetes
   SPRING_CLOUD_KUBERNETES_ENABLED: "false"
 
 x-mongo-env: &mongo-env
-  SPRING_DATA_MONGODB_HOST: mongodb
-  SPRING_DATA_MONGODB_DATABASE: admin
+  # Spring Boot 4 moved these from spring.data.mongodb.* to spring.mongodb.*
+  SPRING_MONGODB_HOST: mongodb
+  SPRING_MONGODB_DATABASE: admin
 
 services:
 
@@ -98,19 +99,19 @@ services:
       <<: *no-kubernetes
       # no discovery locator here either: route statically to each
       # container instead of asking Kubernetes for service instances
-      SPRING_CLOUD_GATEWAY_DISCOVERY_LOCATOR_ENABLED: "false"
-      SPRING_CLOUD_GATEWAY_ROUTES_0_ID: employee
-      SPRING_CLOUD_GATEWAY_ROUTES_0_URI: http://employee-service:8080
-      SPRING_CLOUD_GATEWAY_ROUTES_0_PREDICATES_0: Path=/employee/**
-      SPRING_CLOUD_GATEWAY_ROUTES_0_FILTERS_0: StripPrefix=1
-      SPRING_CLOUD_GATEWAY_ROUTES_1_ID: department
-      SPRING_CLOUD_GATEWAY_ROUTES_1_URI: http://department-service:8080
-      SPRING_CLOUD_GATEWAY_ROUTES_1_PREDICATES_0: Path=/department/**
-      SPRING_CLOUD_GATEWAY_ROUTES_1_FILTERS_0: StripPrefix=1
-      SPRING_CLOUD_GATEWAY_ROUTES_2_ID: organization
-      SPRING_CLOUD_GATEWAY_ROUTES_2_URI: http://organization-service:8080
-      SPRING_CLOUD_GATEWAY_ROUTES_2_PREDICATES_0: Path=/organization/**
-      SPRING_CLOUD_GATEWAY_ROUTES_2_FILTERS_0: StripPrefix=1
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_DISCOVERY_LOCATOR_ENABLED: "false"
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_0_ID: employee
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_0_URI: http://employee-service:8080
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_0_PREDICATES_0: Path=/employee/**
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_0_FILTERS_0: StripPrefix=1
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_1_ID: department
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_1_URI: http://department-service:8080
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_1_PREDICATES_0: Path=/department/**
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_1_FILTERS_0: StripPrefix=1
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_2_ID: organization
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_2_URI: http://organization-service:8080
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_2_PREDICATES_0: Path=/organization/**
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_2_FILTERS_0: StripPrefix=1
     depends_on:
       - employee-service
       - department-service
