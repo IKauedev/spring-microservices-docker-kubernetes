@@ -66,7 +66,12 @@ All four expose Spring Boot Actuator on the same port as the app (`health`, `inf
 ├── department-service/     # Spring Boot app + Dockerfile
 ├── organization-service/   # Spring Boot app + Dockerfile
 ├── gateway-service/        # Spring Boot app + Dockerfile
-├── k8s/                    # Deployments, Services, ConfigMaps, Secrets, RBAC, Ingress
+├── k8s/                    # One folder per app (ConfigMap, Secret, Deployment+Service) + cluster-wide RBAC
+│   ├── gateway/
+│   ├── employee/
+│   ├── department/
+│   ├── organization/
+│   └── mongodb/
 ├── scripts/                # Minikube lifecycle, build/push, log-tailing, sample data
 └── pom.xml                 # Reactor parent (aggregates the four modules)
 ```
@@ -130,9 +135,9 @@ See [`scripts/populate-data.sh`](scripts/populate-data.sh) for the full set of s
 
 ## Observability
 
-- **Health / readiness / liveness**: `GET /actuator/health` (wired into the Kubernetes probes in `k8s/*-deployment.yaml`)
+- **Health / readiness / liveness**: `GET /actuator/health` (wired into the Kubernetes probes in each `k8s/<app>/deployment.yaml`)
 - **Metrics**: `GET /actuator/prometheus` (Micrometer's Prometheus registry)
-- **Tracing**: request-scoped trace/span IDs via Micrometer Tracing, correlated in the log pattern configured in each `*-configmap.yaml`
+- **Tracing**: request-scoped trace/span IDs via Micrometer Tracing, correlated in the log pattern configured in each `k8s/<app>/configmap.yaml`
 - **API docs**: `GET /swagger-ui.html` and `GET /v3/api-docs` on each of the three domain services
 
 ## License

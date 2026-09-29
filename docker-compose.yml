@@ -1,0 +1,125 @@
+name: spring-microservices-docker-kubernetes
+
+# Local, Kubernetes-free way to run the whole stack. The apps normally
+# discover each other through the Kubernetes API (spring-cloud-kubernetes),
+# so here that's swapped for Spring Cloud's "simple" discovery client,
+# fed with the static container DNS names below, and Kubernetes support is
+# turned off so the apps don't try to reach a cluster that doesn't exist.
+
+x-no-kubernetes: &no-kubernetes
+  SPRING_CLOUD_KUBERNETES_ENABLED: "false"
+
+x-mongo-env: &mongo-env
+  SPRING_DATA_MONGODB_HOST: mongodb
+  SPRING_DATA_MONGODB_DATABASE: admin
+
+services:
+
+  # --------------------------------------------------------------------------
+  # datastore
+  # --------------------------------------------------------------------------
+  mongodb:
+    image: mongo:7
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [microservices]
+
+  # --------------------------------------------------------------------------
+  # domain services
+  # --------------------------------------------------------------------------
+  employee-service:
+    build: ./employee-service
+    image: vmware/employee:1.1
+    container_name: employee-service
+    ports:
+      - "8081:8080"
+    environment:
+      <<: [*mongo-env, *no-kubernetes]
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks: [microservices]
+
+  department-service:
+    build: ./department-service
+    image: vmware/department:1.1
+    container_name: department-service
+    ports:
+      - "8082:8080"
+    environment:
+      <<: [*mongo-env, *no-kubernetes]
+      # static replacement for k8s service discovery: Feign's employee client
+      # resolves "employee" to this URI instead of asking the k8s API
+      SPRING_CLOUD_DISCOVERY_CLIENT_SIMPLE_INSTANCES_EMPLOYEE_0_URI: http://employee-service:8080
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      employee-service:
+        condition: service_started
+    networks: [microservices]
+
+  organization-service:
+    build: ./organization-service
+    image: vmware/organization:1.1
+    container_name: organization-service
+    ports:
+      - "8083:8080"
+    environment:
+      <<: [*mongo-env, *no-kubernetes]
+      SPRING_CLOUD_DISCOVERY_CLIENT_SIMPLE_INSTANCES_EMPLOYEE_0_URI: http://employee-service:8080
+      SPRING_CLOUD_DISCOVERY_CLIENT_SIMPLE_INSTANCES_DEPARTMENT_0_URI: http://department-service:8080
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      employee-service:
+        condition: service_started
+      department-service:
+        condition: service_started
+    networks: [microservices]
+
+  # --------------------------------------------------------------------------
+  # edge
+  # --------------------------------------------------------------------------
+  gateway-service:
+    build: ./gateway-service
+    image: vmware/gateway:1.1
+    container_name: gateway-service
+    ports:
+      - "8080:8080"
+    environment:
+      <<: *no-kubernetes
+      # no discovery locator here either: route statically to each
+      # container instead of asking Kubernetes for service instances
+      SPRING_CLOUD_GATEWAY_DISCOVERY_LOCATOR_ENABLED: "false"
+      SPRING_CLOUD_GATEWAY_ROUTES_0_ID: employee
+      SPRING_CLOUD_GATEWAY_ROUTES_0_URI: http://employee-service:8080
+      SPRING_CLOUD_GATEWAY_ROUTES_0_PREDICATES_0: Path=/employee/**
+      SPRING_CLOUD_GATEWAY_ROUTES_0_FILTERS_0: StripPrefix=1
+      SPRING_CLOUD_GATEWAY_ROUTES_1_ID: department
+      SPRING_CLOUD_GATEWAY_ROUTES_1_URI: http://department-service:8080
+      SPRING_CLOUD_GATEWAY_ROUTES_1_PREDICATES_0: Path=/department/**
+      SPRING_CLOUD_GATEWAY_ROUTES_1_FILTERS_0: StripPrefix=1
+      SPRING_CLOUD_GATEWAY_ROUTES_2_ID: organization
+      SPRING_CLOUD_GATEWAY_ROUTES_2_URI: http://organization-service:8080
+      SPRING_CLOUD_GATEWAY_ROUTES_2_PREDICATES_0: Path=/organization/**
+      SPRING_CLOUD_GATEWAY_ROUTES_2_FILTERS_0: StripPrefix=1
+    depends_on:
+      - employee-service
+      - department-service
+      - organization-service
+    networks: [microservices]
+
+networks:
+  microservices:
+    driver: bridge
+
+volumes:
+  mongodb-data:
