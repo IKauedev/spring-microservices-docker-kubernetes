@@ -46,11 +46,11 @@ addresses following concerns:
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 - [sdkman](https://sdkman.io/install)
 
-    JDK 11.x
-    
+    JDK 17.x
+
     ```shell
-    sdk install java 11.0.14-tem
-    sdk use java 11.0.14-tem
+    sdk install java 17.0.16-tem
+    sdk use java 17.0.16-tem
 
     ```
 - [Apache Maven](https://maven.apache.org/install.html)
