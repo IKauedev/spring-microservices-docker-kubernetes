@@ -57,16 +57,3 @@ spec:
           periodSeconds: 20
           failureThreshold: 5
       serviceAccountName: api-service-account
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: mongodb
-  labels:
-    app: mongodb
-spec:
-  ports:
-  - port: 27017
-    protocol: TCP
-  selector:
-    app: mongodb

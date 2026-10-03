@@ -13,44 +13,41 @@ spec:
       labels:
         app: organization
     spec:
+      serviceAccountName: api-service-account
       containers:
-      - name: organization
-        image: vmware/organization:1.1
-        ports:
-          - containerPort: 8080
-        resources:
-          requests:
-            cpu: "0.2"
-            memory: 384Mi
-          limits:
-            cpu: "1.0"
-            memory: 512Mi
-        readinessProbe:
-          httpGet:
-            port: 8080
-            path: /actuator/health
-          initialDelaySeconds: 60
-          timeoutSeconds: 2
-          periodSeconds: 20
-          failureThreshold: 5
-        livenessProbe:
-          httpGet:
-            port: 8080
-            path: /actuator/info
-          initialDelaySeconds: 60
-          timeoutSeconds: 2
-          periodSeconds: 20
-          failureThreshold: 5
-        volumeMounts:
-          - name: mongodb
-            mountPath: /etc/secretspot
-#          - name: config
-#            mountPath: /etc/appconfig
+        - name: organization
+          image: vmware/organization:1.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          resources:
+            requests:
+              cpu: "0.2"
+              memory: 384Mi
+            limits:
+              cpu: "1.0"
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              port: http
+              path: /actuator/health
+            initialDelaySeconds: 60
+            timeoutSeconds: 2
+            periodSeconds: 20
+            failureThreshold: 5
+          livenessProbe:
+            httpGet:
+              port: http
+              path: /actuator/info
+            initialDelaySeconds: 60
+            timeoutSeconds: 2
+            periodSeconds: 20
+            failureThreshold: 5
+          volumeMounts:
+            - name: mongodb
+              mountPath: /etc/secretspot
       volumes:
         - name: mongodb
           secret:
             secretName: organization
-#        - name: config
-#          configMap:
-#            name: organization
-      serviceAccountName: api-service-account

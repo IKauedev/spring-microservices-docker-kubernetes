@@ -2,7 +2,6 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: organization-hpa
-  namespace: organization
 spec:
   scaleTargetRef:
     apiVersion: apps/v1

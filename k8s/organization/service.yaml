@@ -5,9 +5,11 @@ metadata:
   labels:
     app: organization
 spec:
-  ports:
-  - port: 8080
-    protocol: TCP
+  type: NodePort
   selector:
     app: organization
-  type: NodePort
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP

@@ -66,12 +66,14 @@ All four expose Spring Boot Actuator on the same port as the app (`health`, `inf
 ├── department-service/     # Spring Boot app + Dockerfile
 ├── organization-service/   # Spring Boot app + Dockerfile
 ├── gateway-service/        # Spring Boot app + Dockerfile
-├── k8s/                    # One folder per app (ConfigMap, Secret, Deployment+Service) + cluster-wide RBAC
-│   ├── gateway/
-│   ├── employee/
-│   ├── department/
-│   ├── organization/
-│   └── mongodb/
+├── k8s/                    # Kustomize: one folder per app + cluster-wide platform
+│   ├── platform/           # Namespaces, ClusterRole and ClusterRoleBindings
+│   ├── mongodb/            # kustomization, configmap, secret, serviceaccount, deployment, service
+│   ├── employee/           # same layout + hpa.yaml
+│   ├── department/         # same layout + hpa.yaml
+│   ├── organization/       # same layout + hpa.yaml
+│   └── gateway/            # same layout + hpa.yaml, ingress.yaml (no secret)
+├── argocd/                 # GitOps: root-app.yaml (app of apps) + one Application per folder in k8s/
 ├── scripts/                # Minikube lifecycle, build/push, log-tailing, sample data
 └── pom.xml                 # Reactor parent (aggregates the four modules)
 ```
@@ -102,8 +104,8 @@ The `scripts/` directory wraps the whole lifecycle around a dedicated Minikube p
 ```bash
 cd scripts/
 ./start-cluster.sh     # boot the Minikube profile
-./setup-cluster.sh     # namespaces, RBAC, secrets
-./install-all.sh       # build images and apply the k8s manifests
+./setup-cluster.sh     # namespaces and RBAC (k8s/platform)
+./install-all.sh       # build images and apply each app with kubectl apply -k
 ./populate-data.sh     # seed sample employees/departments/organizations
 ./gateway-open.sh      # open the Swagger UI through the gateway
 ```

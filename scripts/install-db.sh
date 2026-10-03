@@ -1,14 +1,12 @@
 #!/bin/bash
 
-# set -e
+# set -x
+
 set -x
 
 . ./set-env.sh
 
-cd ../k8s
-
 kubectl config use-context $CLUSTER1_NAME
 
-kubectl apply -n $NAMESPACE_MONGO -f mongodb/
-
-cd ../scripts
+# o namespace vem do kustomization.yaml de cada pasta
+kubectl apply -k ../k8s/mongodb
