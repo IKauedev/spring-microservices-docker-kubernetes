@@ -5,7 +5,6 @@ metadata:
   labels:
     app: organization
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: organization
@@ -55,17 +54,3 @@ spec:
 #          configMap:
 #            name: organization
       serviceAccountName: api-service-account
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: organization
-  labels:
-    app: organization
-spec:
-  ports:
-  - port: 8080
-    protocol: TCP
-  selector:
-    app: organization
-  type: NodePort
