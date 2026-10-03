@@ -94,6 +94,18 @@ mvn clean package
 
 This builds and tests all four modules and produces a layered, executable JAR per service under each `target/` directory.
 
+## CI
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to `master` and on pull requests:
+
+| Job | What it does |
+|---|---|
+| `build-test` | `mvn verify` for each service in parallel (JDK 17), uploading the Surefire reports |
+| `lint` | `bash -n` + `shellcheck` on `scripts/**/*.sh` and `docker compose config` |
+| `smoke-test` | `docker compose up --build`, then [`scripts/ci/smoke-test.sh`](scripts/ci/smoke-test.sh) exercises the API through the gateway (employee → department → organization, including the Feign call) |
+
+The smoke test also runs against a cluster: `kubectl port-forward -n gateway svc/gateway 8080:8080` and `./scripts/ci/smoke-test.sh`. Manifests are validated in the [gitops repository](https://github.com/IKauedev/spring-microservices-gitops).
+
 ## Run on Kubernetes
 
 The `scripts/` directory wraps the whole lifecycle around a dedicated Minikube profile:
