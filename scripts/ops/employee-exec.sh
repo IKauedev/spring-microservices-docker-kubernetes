@@ -2,10 +2,9 @@
 
 #set -x
 
-. ./set-env.sh
+. "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
-kubectl config set-context $CLUSTER1_NAME
-kubectl config use-context $CLUSTER1_NAME
+use_cluster
 
 # this will only work if Employee Docker image build  from non-distroless image with layers copied over see example below:
 kubectl get pod -n $NAMESPACE_EMPLOYEE -l 'app=employee' --no-headers | awk '{print $1}' | xargs -I {} echo "kubectl exec -it {} -n \"$NAMESPACE_EMPLOYEE\" -- /bin/bash"

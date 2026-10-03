@@ -74,7 +74,12 @@ All four expose Spring Boot Actuator on the same port as the app (`health`, `inf
 │   ├── organization/       # same layout + hpa.yaml
 │   └── gateway/            # same layout + hpa.yaml, ingress.yaml (no secret)
 ├── argocd/                 # GitOps: root-app.yaml (app of apps) + one Application per folder in k8s/
-├── scripts/                # Minikube lifecycle, build/push, log-tailing, sample data
+├── scripts/
+│   ├── lib/                # env.sh (nomes, namespaces) + common.sh (caminhos, use_cluster)
+│   ├── cluster/            # start, setup, stop, destroy, ip
+│   ├── deploy/             # build-app, build-push, install-*, delete-*
+│   ├── ops/                # logs, exec, populate-data, gateway-open
+│   └── argocd/             # bootstrap, port-forward, password, status
 └── pom.xml                 # Reactor parent (aggregates the four modules)
 ```
 
@@ -103,22 +108,35 @@ The `scripts/` directory wraps the whole lifecycle around a dedicated Minikube p
 
 ```bash
 cd scripts/
-./start-cluster.sh     # boot the Minikube profile
-./setup-cluster.sh     # namespaces and RBAC (k8s/platform)
-./install-all.sh       # build images and apply each app with kubectl apply -k
-./populate-data.sh     # seed sample employees/departments/organizations
-./gateway-open.sh      # open the Swagger UI through the gateway
+./cluster/start.sh        # boot the Minikube profile
+./cluster/setup.sh        # namespaces and RBAC (k8s/platform)
+./deploy/install-all.sh   # build images and apply each app with kubectl apply -k
+./ops/populate-data.sh    # seed sample employees/departments/organizations
+./ops/gateway-open.sh     # open the Swagger UI through the gateway
 ```
 
 Tear down with:
 
 ```bash
-./delete-all.sh        # remove the app's k8s resources
-./destroy-cluster.sh    # remove namespaces/RBAC
-./stop-cluster.sh      # stop the Minikube profile
+./deploy/delete-all.sh    # remove the app's k8s resources
+./cluster/destroy.sh      # remove namespaces/RBAC
+./cluster/stop.sh         # stop the Minikube profile
 ```
 
-`./employee-log.sh`, `./department-log.sh` and `./organization-log.sh` tail a given service's pod logs.
+`./ops/employee-log.sh`, `./ops/department-log.sh`, `./ops/organization-log.sh` and `./ops/gateway-log.sh` tail a given service's pod logs.
+
+The scripts locate the repository on their own (via `scripts/lib/common.sh`), so they work from any directory.
+
+### GitOps with Argo CD
+
+With Argo CD installed in the cluster, `./argocd/bootstrap.sh` applies [`argocd/root-app.yaml`](argocd/root-app.yaml); it creates one Application per folder in `k8s/` and keeps the cluster in sync with `master`.
+
+```bash
+./argocd/bootstrap.sh      # register the root app (app of apps)
+./argocd/status.sh         # sync/health of every Application
+./argocd/port-forward.sh   # UI at https://localhost:8443 (user: admin)
+./argocd/password.sh       # initial admin password
+```
 
 ## Run locally with Docker Compose
 

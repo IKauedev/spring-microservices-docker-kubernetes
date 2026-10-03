@@ -3,6 +3,6 @@
 set -e
 set -x
 
-. ./set-env.sh
+. "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
 minikube stop -p $CLUSTER1_NAME

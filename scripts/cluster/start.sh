@@ -3,7 +3,7 @@
 set -e
 set -x
 
-. ./set-env.sh
+. "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
 minikube start -p $CLUSTER1_NAME --memory='6000mb' --cpus=4 --disk-size=40g --driver="$MINIKUBE_DRIVER" --insecure-registry=localhost:5000
 minikube profile $CLUSTER1_NAME

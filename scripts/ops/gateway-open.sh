@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. ./set-env.sh
+. "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
 # With the docker driver on Windows/macOS the node IP is not reachable from the host,
 # so `minikube service --url` opens a tunnel and keeps running: leave this terminal open.

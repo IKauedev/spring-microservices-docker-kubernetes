@@ -3,13 +3,13 @@
 # set -e
 set -x
 
-. ./set-env.sh
+. "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
-kubectl config use-context $CLUSTER1_NAME
+use_cluster
 
 # cada app tem um kustomization.yaml (namespace + recursos); -k aplica a pasta inteira
 for app in department organization gateway employee; do
-  kubectl apply -k ../k8s/$app
+  kubectl apply -k "$K8S_DIR/$app"
 done
 
 minikube profile $CLUSTER1_NAME

@@ -2,9 +2,8 @@
 
 set -x
 
-. ./set-env.sh
+. "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
-kubectl config set-context $CLUSTER1_NAME
-kubectl config use-context $CLUSTER1_NAME
+use_cluster
 
 kubectl get pod -n $NAMESPACE_EMPLOYEE -l 'app=employee' --no-headers | awk '{print $1}' | xargs -I {} sh -c 'echo {}; kubectl logs --follow {} -n $NAMESPACE_EMPLOYEE'

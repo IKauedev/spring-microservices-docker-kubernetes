@@ -2,11 +2,11 @@
 
 set -x
 
-. ./set-env.sh
+. "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
-. ./delete-app.sh
+. "$SCRIPTS_DIR/deploy/delete-app.sh"
 
-. ./delete-db.sh
+. "$SCRIPTS_DIR/deploy/delete-db.sh"
 
 #eval $(minikube docker-env)
 #docker rmi $(docker images --format '{{.Repository}}:{{.Tag}}' | grep 'vmware/department:1.1')

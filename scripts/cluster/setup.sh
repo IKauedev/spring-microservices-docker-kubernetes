@@ -2,11 +2,10 @@
 
 set -x
 
-. ./set-env.sh
+. "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
-kubectl config set-context $CLUSTER1_NAME
-kubectl config use-context $CLUSTER1_NAME
+use_cluster
 
 # namespaces, ClusterRole e ClusterRoleBindings (k8s/platform).
 # As ServiceAccounts ficam junto de cada app, em k8s/<app>/serviceaccount.yaml.
-kubectl apply -k ../k8s/platform
+kubectl apply -k "$K8S_DIR/platform"

@@ -2,7 +2,7 @@
 
 set -x
 
-. ./set-env.sh
+. "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
 # add employee
 curl -X POST "$(minikube service employee --url -n $NAMESPACE_EMPLOYEE)/" -H "accept: */*" -H "Content-Type: application/json" -d "{ \"age\": 25, \"departmentId\": 1, \"id\": \"1\", \"name\": \"Smith\", \"organizationId\": 1, \"position\": \"engineer\"}"

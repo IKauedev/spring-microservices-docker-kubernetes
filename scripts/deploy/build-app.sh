@@ -3,9 +3,8 @@
 set -e
 set -x
 
-. ./set-env.sh
+. "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
 
-cd ..
 
 minikube profile $CLUSTER1_NAME
 
@@ -14,25 +13,20 @@ minikube profile $CLUSTER1_NAME
 eval $(minikube docker-env)
 docker images
 
-mvn clean
+(cd "$REPO_ROOT" && mvn clean)
 
-cd department-service
+cd "$REPO_ROOT/department-service"
 docker build -t vmware/department:1.1 .
-cd ..
 
-cd gateway-service
+cd "$REPO_ROOT/gateway-service"
 docker build -t vmware/gateway:1.1 .
-cd ..
 
-cd organization-service
+cd "$REPO_ROOT/organization-service"
 docker build -t vmware/organization:1.1 .
-cd ..
 
 
-cd employee-service
+cd "$REPO_ROOT/employee-service"
 docker build -t vmware/employee:1.1 .
-cd ..
 
 docker images
 
-cd scripts
