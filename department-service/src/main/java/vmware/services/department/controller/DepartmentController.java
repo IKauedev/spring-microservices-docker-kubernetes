@@ -3,7 +3,9 @@ package vmware.services.department.controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import vmware.services.department.client.EmployeeClient;
 import vmware.services.department.model.Department;
 import vmware.services.department.model.Employee;
@@ -35,7 +37,8 @@ public class DepartmentController {
 	@GetMapping("/{id}")
 	public Department findById(@PathVariable("id") String id) {
 		LOGGER.info("Department find: id={}", id);
-		return repository.findById(id).get();
+		return repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Department not found: " + id));
 	}
 	
 	@GetMapping("/")

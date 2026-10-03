@@ -17,17 +17,14 @@ import vmware.services.organization.model.Organization;
 import vmware.services.organization.repository.OrganizationRepository;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -113,12 +110,10 @@ class OrganizationControllerTest {
     }
 
     @Test
-    void findByIdOfUnknownOrganizationFailsWithNoSuchElement() {
+    void findByIdOfUnknownOrganizationReturns404() throws Exception {
         when(repository.findById("nope")).thenReturn(Optional.empty());
 
-        // comportamento atual: Optional.get() sem tratamento, que em runtime vira erro 500
-        assertThatThrownBy(() -> mvc.perform(get("/nope")))
-                .hasRootCauseInstanceOf(NoSuchElementException.class);
+        mvc.perform(get("/nope")).andExpect(status().isNotFound());
     }
 
     @Test
@@ -158,12 +153,12 @@ class OrganizationControllerTest {
     }
 
     @Test
-    void enrichedLookupsOfUnknownOrganizationsReturnAnEmptyBodyWithoutCallingOtherServices() throws Exception {
+    void enrichedLookupsOfUnknownOrganizationsReturn404WithoutCallingOtherServices() throws Exception {
         when(repository.findById("404")).thenReturn(Optional.empty());
 
-        mvc.perform(get("/404/with-departments")).andExpect(status().isOk()).andExpect(content().string(""));
-        mvc.perform(get("/404/with-departments-and-employees")).andExpect(status().isOk()).andExpect(content().string(""));
-        mvc.perform(get("/404/with-employees")).andExpect(status().isOk()).andExpect(content().string(""));
+        mvc.perform(get("/404/with-departments")).andExpect(status().isNotFound());
+        mvc.perform(get("/404/with-departments-and-employees")).andExpect(status().isNotFound());
+        mvc.perform(get("/404/with-employees")).andExpect(status().isNotFound());
 
         verifyNoInteractions(departmentClient, employeeClient);
     }
