@@ -14,7 +14,8 @@ public class Employee {
     private int age;
     private String position;
 
-    public Employee() { }
+    public Employee() {
+    }
 
     public Employee(Long organizationId, Long departmentId, String name, int age, String position) {
         this.organizationId = organizationId;
