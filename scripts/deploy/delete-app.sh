@@ -7,5 +7,5 @@ set -x
 use_cluster
 
 for app in department gateway organization employee; do
-  kubectl delete -k "$K8S_DIR/$app"
+  kubectl delete -k "$OVERLAY_DIR/$app"
 done

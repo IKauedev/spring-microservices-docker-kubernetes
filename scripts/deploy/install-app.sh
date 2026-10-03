@@ -9,7 +9,7 @@ use_cluster
 
 # cada app tem um kustomization.yaml (namespace + recursos); -k aplica a pasta inteira
 for app in department organization gateway employee; do
-  kubectl apply -k "$K8S_DIR/$app"
+  kubectl apply -k "$OVERLAY_DIR/$app"
 done
 
 minikube profile $CLUSTER1_NAME

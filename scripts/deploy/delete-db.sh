@@ -6,4 +6,4 @@ set -x
 
 use_cluster
 
-kubectl delete -k "$K8S_DIR/mongodb"
+kubectl delete -k "$OVERLAY_DIR/mongodb"

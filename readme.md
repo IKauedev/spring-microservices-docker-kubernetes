@@ -100,7 +100,7 @@ The `scripts/` directory wraps the whole lifecycle around a dedicated Minikube p
 
 ```bash
 cd scripts/
-./cluster/start.sh        # boot the Minikube profile
+./cluster/start.sh        # boot the Minikube profile (MINIKUBE_MEMORY=12000mb, MINIKUBE_CPUS=6 by default)
 ./cluster/setup.sh        # namespaces and RBAC (k8s/platform)
 ./deploy/install-all.sh   # build images and apply each app with kubectl apply -k
 ./ops/populate-data.sh    # seed sample employees/departments/organizations
@@ -121,7 +121,7 @@ The scripts locate the repository on their own (via `scripts/lib/common.sh`), so
 
 ### GitOps with Argo CD
 
-The cluster configuration (`k8s/` and `argocd/`) lives **only** in [`spring-microservices-gitops`](https://github.com/IKauedev/spring-microservices-gitops); this repository holds the code. The scripts clone it next to this folder on first use (override with `GITOPS_DIR=/path`). With Argo CD installed in the cluster, `./argocd/bootstrap.sh` applies its `argocd/root-app.yaml`; it creates one Application per folder in `k8s/` and keeps the cluster in sync with that repository's `master`. To change a manifest, edit and push it there.
+The cluster configuration (`k8s/` and `argocd/`) lives **only** in [`spring-microservices-gitops`](https://github.com/IKauedev/spring-microservices-gitops); this repository holds the code. The scripts clone it next to this folder on first use (override with `GITOPS_DIR=/path`). With Argo CD installed in the cluster, `./argocd/bootstrap.sh` applies its `argocd/root-app.yaml`; it creates one Application per folder in `k8s/` and keeps the cluster in sync with that repository's `master`. To change a manifest, edit and push it there. Manifests are Kustomize `base/` + `overlays/<env>` (`dev` by default; `ENV_NAME=prod ./deploy/install-all.sh` picks another one), and an `ApplicationSet` generates one Argo Application per environment and app — see that repository's README to add a cluster.
 
 ```bash
 ./argocd/bootstrap.sh      # register the root app (app of apps)

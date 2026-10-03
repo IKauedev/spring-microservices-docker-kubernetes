@@ -9,4 +9,4 @@ set -x
 use_cluster
 
 # ClusterRole, ClusterRoleBindings e namespaces (as ServiceAccounts somem com os namespaces)
-kubectl delete -k "$K8S_DIR/platform"
+kubectl delete -k "$OVERLAY_DIR/platform"
