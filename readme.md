@@ -56,7 +56,7 @@ All four expose Spring Boot Actuator on the same port as the app (`health`, `inf
 - **Observability**: Micrometer + Prometheus registry, Micrometer Tracing (Brave bridge)
 - **API docs**: springdoc-openapi (OpenAPI 3 / Swagger UI)
 - **Packaging**: layered Spring Boot JARs on distroless Java 17 base images
-- **Orchestration**: Kubernetes manifests under [`k8s/`](k8s), driven by the shell scripts under [`scripts/`](scripts)
+- **Orchestration**: Kubernetes manifests live in the [`spring-microservices-gitops`](https://github.com/IKauedev/spring-microservices-gitops) repository (single source of truth), driven by the shell scripts under [`scripts/`](scripts)
 
 ## Repository layout
 
@@ -66,14 +66,6 @@ All four expose Spring Boot Actuator on the same port as the app (`health`, `inf
 ├── department-service/     # Spring Boot app + Dockerfile
 ├── organization-service/   # Spring Boot app + Dockerfile
 ├── gateway-service/        # Spring Boot app + Dockerfile
-├── k8s/                    # Kustomize: one folder per app + cluster-wide platform
-│   ├── platform/           # Namespaces, ClusterRole and ClusterRoleBindings
-│   ├── mongodb/            # kustomization, configmap, secret, serviceaccount, deployment, service
-│   ├── employee/           # same layout + hpa.yaml
-│   ├── department/         # same layout + hpa.yaml
-│   ├── organization/       # same layout + hpa.yaml
-│   └── gateway/            # same layout + hpa.yaml, ingress.yaml (no secret)
-├── argocd/                 # GitOps: root-app.yaml (app of apps) + one Application per folder in k8s/
 ├── scripts/
 │   ├── lib/                # env.sh (nomes, namespaces) + common.sh (caminhos, use_cluster)
 │   ├── cluster/            # start, setup, stop, destroy, ip
@@ -129,7 +121,7 @@ The scripts locate the repository on their own (via `scripts/lib/common.sh`), so
 
 ### GitOps with Argo CD
 
-With Argo CD installed in the cluster, `./argocd/bootstrap.sh` applies [`argocd/root-app.yaml`](argocd/root-app.yaml); it creates one Application per folder in `k8s/` and keeps the cluster in sync with `master`.
+The cluster configuration (`k8s/` and `argocd/`) lives **only** in [`spring-microservices-gitops`](https://github.com/IKauedev/spring-microservices-gitops); this repository holds the code. The scripts clone it next to this folder on first use (override with `GITOPS_DIR=/path`). With Argo CD installed in the cluster, `./argocd/bootstrap.sh` applies its `argocd/root-app.yaml`; it creates one Application per folder in `k8s/` and keeps the cluster in sync with that repository's `master`. To change a manifest, edit and push it there.
 
 ```bash
 ./argocd/bootstrap.sh      # register the root app (app of apps)
@@ -158,7 +150,7 @@ docker compose up --build
 Kubernetes service discovery isn't available outside a cluster, so this file disables
 `spring.cloud.kubernetes` and wires the same routing statically instead: Feign clients get their
 target services from Spring Cloud's Simple Discovery Client, and the gateway gets a fixed
-route per service instead of the discovery locator used in `k8s/gateway/configmap.yaml`.
+route per service instead of the discovery locator used in `k8s/gateway/configmap.yaml` of the gitops repo.
 
 ## Talking to the API
 
@@ -177,9 +169,9 @@ See [`scripts/populate-data.sh`](scripts/populate-data.sh) for the full set of s
 
 ## Observability
 
-- **Health / readiness / liveness**: `GET /actuator/health` (wired into the Kubernetes probes in each `k8s/<app>/deployment.yaml`)
+- **Health / readiness / liveness**: `GET /actuator/health` (wired into the Kubernetes probes in each `k8s/<app>/deployment.yaml` of the gitops repo)
 - **Metrics**: `GET /actuator/prometheus` (Micrometer's Prometheus registry)
-- **Tracing**: request-scoped trace/span IDs via Micrometer Tracing, correlated in the log pattern configured in each `k8s/<app>/configmap.yaml`
+- **Tracing**: request-scoped trace/span IDs via Micrometer Tracing, correlated in the log pattern configured in each `k8s/<app>/configmap.yaml` of the gitops repo
 - **API docs**: `GET /swagger-ui.html` and `GET /v3/api-docs` on each of the three domain services
 
 ## License

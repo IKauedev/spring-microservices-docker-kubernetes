@@ -5,9 +5,19 @@
 
 SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO_ROOT="$(cd "$SCRIPTS_DIR/.." && pwd)"
-K8S_DIR="$REPO_ROOT/k8s"
-ARGOCD_DIR="$REPO_ROOT/argocd"
-export SCRIPTS_DIR REPO_ROOT K8S_DIR ARGOCD_DIR
+
+# Fonte unica da configuracao do cluster: o repositorio spring-microservices-gitops
+# (k8s/ e argocd/). Por padrao e um clone ao lado deste repositorio; use
+# GITOPS_DIR=/outro/caminho para sobrescrever.
+GITOPS_REPO_URL="${GITOPS_REPO_URL:-https://github.com/IKauedev/spring-microservices-gitops.git}"
+GITOPS_DIR="${GITOPS_DIR:-$(dirname "$REPO_ROOT")/spring-microservices-gitops}"
+if [ ! -d "$GITOPS_DIR/k8s" ]; then
+  echo "Clonando $GITOPS_REPO_URL em $GITOPS_DIR"
+  git clone "$GITOPS_REPO_URL" "$GITOPS_DIR" || return 1
+fi
+K8S_DIR="$GITOPS_DIR/k8s"
+ARGOCD_DIR="$GITOPS_DIR/argocd"
+export SCRIPTS_DIR REPO_ROOT GITOPS_DIR K8S_DIR ARGOCD_DIR
 
 . "$SCRIPTS_DIR/lib/env.sh"
 
