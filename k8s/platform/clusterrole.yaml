@@ -1,9 +1,0 @@
-# Permite ao Spring Cloud Kubernetes descobrir servicos e ler ConfigMaps/Secrets
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: microservices-kubernetes-namespace-reader
-rules:
-  - apiGroups: [""]
-    resources: ["configmaps", "pods", "services", "endpoints", "secrets"]
-    verbs: ["get", "list", "watch"]
