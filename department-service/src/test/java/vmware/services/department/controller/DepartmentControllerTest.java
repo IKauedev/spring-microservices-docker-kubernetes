@@ -16,10 +16,8 @@ import vmware.services.department.repository.DepartmentRepository;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -86,12 +84,10 @@ class DepartmentControllerTest {
     }
 
     @Test
-    void findByIdOfUnknownDepartmentFailsWithNoSuchElement() {
+    void findByIdOfUnknownDepartmentReturns404() throws Exception {
         when(repository.findById("nope")).thenReturn(Optional.empty());
 
-        // comportamento atual: Optional.get() sem tratamento, que em runtime vira erro 500
-        assertThatThrownBy(() -> mvc.perform(get("/nope")))
-                .hasRootCauseInstanceOf(NoSuchElementException.class);
+        mvc.perform(get("/nope")).andExpect(status().isNotFound());
     }
 
     @Test

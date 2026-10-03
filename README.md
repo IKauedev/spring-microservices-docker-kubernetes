@@ -9,8 +9,6 @@ A small reference stack of four Spring Boot microservices — **Employee**, **De
 
 It exists mainly as a hands-on playground for the plumbing every microservice fleet needs: service discovery, client-side load balancing, externalized config, health probes, metrics, tracing and API docs — without any real business logic getting in the way.
 
-> This project is a fork of [AndriyKalashnykov/spring-microservices-k8s](https://github.com/AndriyKalashnykov/spring-microservices-k8s) (originally written for the Tanzu Development Center), migrated from Spring Boot 2.3 / Java 8-11 to **Spring Boot 4.1.1** and **Spring Cloud 2025.1 (Oakwood)** on **Java 17**. Netflix Zuul, Netflix Ribbon, Spring Cloud Sleuth and Springfox — all discontinued — were replaced with Spring Cloud Gateway, Spring Cloud LoadBalancer, Micrometer Tracing and springdoc-openapi respectively.
-
 ## Architecture
 
 ```mermaid

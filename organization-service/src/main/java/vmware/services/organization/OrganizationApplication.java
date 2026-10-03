@@ -16,21 +16,20 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 @EnableFeignClients
 @EnableMongoRepositories
 public class OrganizationApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(OrganizationApplication.class, args);
+    }
 
-	public static void main(String[] args) {
-		SpringApplication.run(OrganizationApplication.class, args);
-	}
+    @Bean
+    public OpenAPI organizationOpenApi() {
+        return new OpenAPI().info(new Info()
+                .title("Organization API")
+                .version("1.0")
+                .description("Documentation Organization API v1.0"));
+    }
 
-	@Bean
-	public OpenAPI organizationOpenApi() {
-		return new OpenAPI().info(new Info()
-				.title("Organization API")
-				.version("1.0")
-				.description("Documentation Organization API v1.0"));
-	}
-
-	@Bean
-	MeterRegistryCustomizer<MeterRegistry> meterRegistryCustomizer() {
-		return registry -> registry.config().commonTags("application", "organization");
-	}
+    @Bean
+    MeterRegistryCustomizer<MeterRegistry> meterRegistryCustomizer() {
+        return registry -> registry.config().commonTags("application", "organization");
+    }
 }
