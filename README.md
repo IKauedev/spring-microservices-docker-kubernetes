@@ -33,13 +33,13 @@ flowchart LR
     end
 ```
 
-Every service registers itself and discovers its peers through the Kubernetes API (`spring-cloud-kubernetes-fabric8`) — there is no Eureka, Consul or Zookeeper in this stack. The gateway routes requests purely by service name via Spring Cloud Gateway's discovery locator, so adding a fifth service to the cluster requires no gateway configuration change.
+Every service registers itself and discovers its peers through the Kubernetes API (`spring-cloud-kubernetes-fabric8`) — there is no Eureka, Consul or Zookeeper in this stack. The gateway routes requests through static routes declared in its `application.yml` (`/employee/**`, `/department/**`, `/organization/**`, each with `StripPrefix=1` pointing at the Service's cluster DNS name). The discovery locator is disabled: it kept stale routes (404) when a gateway pod started in the middle of a rollout. Adding a fifth service therefore means adding a route there.
 
 ## Services
 
 | Service               | Role                                            | Talks to                     | Docs (once running)         |
 |-----------------------|--------------------------------------------------|-------------------------------|------------------------------|
-| `gateway-service`     | Edge router / reverse proxy                      | all of the below (discovery)  | `/actuator`                  |
+| `gateway-service`     | Edge router / reverse proxy                      | all of the below (static routes) | `/actuator`                  |
 | `employee-service`    | CRUD for employees, backed by MongoDB            | —                              | `/swagger-ui.html`           |
 | `department-service`  | CRUD for departments; enriches with employee data| `employee-service` (Feign)     | `/swagger-ui.html`           |
 | `organization-service`| CRUD for organizations; enriches with dept/employee data | `department-service`, `employee-service` (Feign) | `/swagger-ui.html` |
@@ -115,7 +115,7 @@ cd scripts/
 ./deploy/install-all.sh   # build images and apply each app with kubectl apply -k
 ./ops/populate-data.sh    # seed sample employees/departments/organizations
 ./ops/gateway-open.sh     # open the Swagger UI through the gateway
-./ops/expose-all.sh       # expose every service on localhost (8080-8083, mongo 27017)
+./ops/expose-all.sh       # expose every service on localhost (8080-8083, mongo 27017, Argo CD https://localhost:8443)
 ```
 
 Tear down with:
@@ -161,7 +161,7 @@ docker compose up --build
 Kubernetes service discovery isn't available outside a cluster, so this file disables
 `spring.cloud.kubernetes` and wires the same routing statically instead: Feign clients get their
 target services from Spring Cloud's Simple Discovery Client, and the gateway gets a fixed
-route per service instead of the discovery locator used in `k8s/gateway/configmap.yaml` of the gitops repo.
+route per service (`ROUTES_n_*`, overriding the cluster-DNS defaults declared in the gateway's `application.yml`).
 
 ## Talking to the API
 
