@@ -1,0 +1,1609 @@
+{
+  "info": {
+    "_postman_id": "ad19fabb-ead2-4951-8510-1b7bbbd5c36f",
+    "name": "Spring Microservices (via gateway)",
+    "description": "Testa employee, department e organization atraves do gateway.\n\n1. `./scripts/ops/expose-all.sh` (gateway em http://localhost:8080)\n2. Rode as pastas em ordem (Collection Runner). A pasta 1 cria os dados usados pelas demais; a 6 limpa.\n\nVariaveis: baseUrl, orgId, deptId, empId.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "orgId",
+      "value": "9001"
+    },
+    {
+      "key": "deptId",
+      "value": "9001"
+    },
+    {
+      "key": "empId",
+      "value": "9001"
+    }
+  ],
+  "item": [
+    {
+      "name": "0 - Health",
+      "item": [
+        {
+          "name": "Gateway",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "health"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Employee",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employee/actuator/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employee",
+                "actuator",
+                "health"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Department",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/department/actuator/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "department",
+                "actuator",
+                "health"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Organization",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/organization/actuator/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "organization",
+                "actuator",
+                "health"
+              ]
+            }
+          }
+        }
+      ],
+      "description": "Confere se tudo esta no ar atraves do gateway."
+    },
+    {
+      "name": "1 - Setup (criar dados)",
+      "item": [
+        {
+          "name": "Criar organization",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"resposta contem id\", function () { pm.expect(pm.response.json()).to.have.property(\"id\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/organization/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "organization"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{orgId}}\",\n  \"name\": \"Acme\",\n  \"address\": \"Main Street\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Criar department",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"resposta contem id\", function () { pm.expect(pm.response.json()).to.have.property(\"id\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/department/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "department"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{deptId}}\",\n  \"name\": \"RD Dept.\",\n  \"organizationId\": \"{{orgId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Criar employee",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"resposta contem id\", function () { pm.expect(pm.response.json()).to.have.property(\"id\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/employee/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employee"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{empId}}\",\n  \"name\": \"Smith\",\n  \"age\": 25,\n  \"position\": \"engineer\",\n  \"departmentId\": \"{{deptId}}\",\n  \"organizationId\": \"{{orgId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "description": "Rode primeiro: os endpoints com Feign (with-employees, summary) dependem destes dados."
+    },
+    {
+      "name": "2 - Employee",
+      "item": [
+        {
+          "name": "Listar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employee/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employee"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar por id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"resposta contem name\", function () { pm.expect(pm.response.json()).to.have.property(\"name\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employee/{{empId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employee",
+                "{{empId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Busca paginada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"resposta contem totalElements\", function () { pm.expect(pm.response.json()).to.have.property(\"totalElements\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employee/search?name=smi&position=engineer&page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employee",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "smi"
+                },
+                {
+                  "key": "position",
+                  "value": "engineer"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Count",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"resposta contem count\", function () { pm.expect(pm.response.json()).to.have.property(\"count\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employee/count",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employee",
+                "count"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Stats",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"resposta contem averageAge\", function () { pm.expect(pm.response.json()).to.have.property(\"averageAge\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employee/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employee",
+                "stats"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Por department",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employee/department/{{deptId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employee",
+                "department",
+                "{{deptId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Count por department",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"resposta contem count\", function () { pm.expect(pm.response.json()).to.have.property(\"count\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employee/department/{{deptId}}/count",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employee",
+                "department",
+                "{{deptId}}",
+                "count"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Por organization",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employee/organization/{{orgId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employee",
+                "organization",
+                "{{orgId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Count por organization",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"resposta contem count\", function () { pm.expect(pm.response.json()).to.have.property(\"count\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employee/organization/{{orgId}}/count",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employee",
+                "organization",
+                "{{orgId}}",
+                "count"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Atualizar (PUT)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"resposta contem name\", function () { pm.expect(pm.response.json()).to.have.property(\"name\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/employee/{{empId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employee",
+                "{{empId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{empId}}\",\n  \"name\": \"Smith Jr\",\n  \"age\": 26,\n  \"position\": \"engineer\",\n  \"departmentId\": \"{{deptId}}\",\n  \"organizationId\": \"{{orgId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3 - Department",
+      "item": [
+        {
+          "name": "Listar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/department/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "department"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar por id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"resposta contem name\", function () { pm.expect(pm.response.json()).to.have.property(\"name\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/department/{{deptId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "department",
+                "{{deptId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Com employees (Feign)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"resposta contem employees\", function () { pm.expect(pm.response.json()).to.have.property(\"employees\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/department/{{deptId}}/with-employees",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "department",
+                "{{deptId}}",
+                "with-employees"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Busca paginada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"resposta contem totalElements\", function () { pm.expect(pm.response.json()).to.have.property(\"totalElements\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/department/search?name=rd&page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "department",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "rd"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Count",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"resposta contem count\", function () { pm.expect(pm.response.json()).to.have.property(\"count\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/department/count",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "department",
+                "count"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Por organization",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/department/organization/{{orgId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "department",
+                "organization",
+                "{{orgId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Count por organization",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"resposta contem count\", function () { pm.expect(pm.response.json()).to.have.property(\"count\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/department/organization/{{orgId}}/count",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "department",
+                "organization",
+                "{{orgId}}",
+                "count"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Por organization com employees",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/department/organization/{{orgId}}/with-employees",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "department",
+                "organization",
+                "{{orgId}}",
+                "with-employees"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Atualizar (PUT)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"resposta contem name\", function () { pm.expect(pm.response.json()).to.have.property(\"name\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/department/{{deptId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "department",
+                "{{deptId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{deptId}}\",\n  \"name\": \"RD Dept. v2\",\n  \"organizationId\": \"{{orgId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4 - Organization",
+      "item": [
+        {
+          "name": "Listar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/organization/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "organization"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar por id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"resposta contem name\", function () { pm.expect(pm.response.json()).to.have.property(\"name\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/organization/{{orgId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "organization",
+                "{{orgId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Busca paginada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"resposta contem totalElements\", function () { pm.expect(pm.response.json()).to.have.property(\"totalElements\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/organization/search?name=ac&page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "organization",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "ac"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Count",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"resposta contem count\", function () { pm.expect(pm.response.json()).to.have.property(\"count\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/organization/count",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "organization",
+                "count"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Summary (Feign)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"resposta contem employeeCount\", function () { pm.expect(pm.response.json()).to.have.property(\"employeeCount\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/organization/{{orgId}}/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "organization",
+                "{{orgId}}",
+                "summary"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Com departments",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"resposta contem departments\", function () { pm.expect(pm.response.json()).to.have.property(\"departments\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/organization/{{orgId}}/with-departments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "organization",
+                "{{orgId}}",
+                "with-departments"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Com employees",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"resposta contem employees\", function () { pm.expect(pm.response.json()).to.have.property(\"employees\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/organization/{{orgId}}/with-employees",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "organization",
+                "{{orgId}}",
+                "with-employees"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Com departments e employees",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"resposta contem departments\", function () { pm.expect(pm.response.json()).to.have.property(\"departments\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/organization/{{orgId}}/with-departments-and-employees",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "organization",
+                "{{orgId}}",
+                "with-departments-and-employees"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Atualizar (PUT)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"resposta contem name\", function () { pm.expect(pm.response.json()).to.have.property(\"name\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/organization/{{orgId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "organization",
+                "{{orgId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{orgId}}\",\n  \"name\": \"Acme v2\",\n  \"address\": \"Main Street\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5 - Erros esperados",
+      "item": [
+        {
+          "name": "Employee inexistente -> 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 404\", function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employee/nao-existe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employee",
+                "nao-existe"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Department inexistente -> 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 404\", function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/department/nao-existe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "department",
+                "nao-existe"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Organization inexistente -> 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 404\", function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/organization/nao-existe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "organization",
+                "nao-existe"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Employee com nome vazio -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/employee/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employee"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"invalido\",\n  \"name\": \"\",\n  \"age\": 25,\n  \"position\": \"engineer\",\n  \"departmentId\": \"{{deptId}}\",\n  \"organizationId\": \"{{orgId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Employee com idade 200 -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/employee/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employee"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"invalido\",\n  \"name\": \"Smith\",\n  \"age\": 200,\n  \"position\": \"engineer\",\n  \"departmentId\": \"{{deptId}}\",\n  \"organizationId\": \"{{orgId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Department com nome vazio -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/department/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "department"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"invalido\",\n  \"name\": \"\",\n  \"organizationId\": \"{{orgId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Organization com nome vazio -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 400\", function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/organization/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "organization"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"invalido\",\n  \"name\": \"\",\n  \"address\": \"Main Street\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "description": "Respostas de erro em application/problem+json."
+    },
+    {
+      "name": "6 - Cleanup",
+      "item": [
+        {
+          "name": "Remover employee (204)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employee/{{empId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employee",
+                "{{empId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Employee removido -> 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 404\", function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employee/{{empId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employee",
+                "{{empId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Remover department (204)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/department/{{deptId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "department",
+                "{{deptId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Remover organization (204)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/organization/{{orgId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "organization",
+                "{{orgId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7 - Extras (destrutivo)",
+      "item": [
+        {
+          "name": "Remover TODOS os employees de um department",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"resposta contem deleted\", function () { pm.expect(pm.response.json()).to.have.property(\"deleted\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employee/department/{{deptId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employee",
+                "department",
+                "{{deptId}}"
+              ]
+            },
+            "description": "Apaga em massa os employees do departamento informado. Fora do fluxo principal de proposito."
+          }
+        }
+      ]
+    }
+  ]
+}

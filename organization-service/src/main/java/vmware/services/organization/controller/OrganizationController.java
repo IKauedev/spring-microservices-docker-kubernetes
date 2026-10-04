@@ -1,83 +1,92 @@
 package vmware.services.organization.controller;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import vmware.services.organization.client.DepartmentClient;
-import vmware.services.organization.client.EmployeeClient;
+import vmware.services.organization.dto.OrganizationSummary;
+import vmware.services.organization.dto.PageResponse;
 import vmware.services.organization.model.Organization;
-import vmware.services.organization.repository.OrganizationRepository;
+import vmware.services.organization.service.OrganizationService;
 
-import java.util.Optional;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 public class OrganizationController {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(OrganizationController.class);
-	
-	@Autowired
-	OrganizationRepository repository;
-	@Autowired
-    DepartmentClient departmentClient;
-	@Autowired
-	EmployeeClient employeeClient;
-	
-	@PostMapping
-	public Organization add(@RequestBody Organization organization) {
-		LOGGER.info("Organization add: {}", organization);
-		return repository.save(organization);
-	}
-	
-	@GetMapping
-	public Iterable<Organization> findAll() {
-		LOGGER.info("Organization find");
-		return repository.findAll();
-	}
-	
-	@GetMapping("/{id}")
-	public Organization findById(@PathVariable("id") String id) {
-		LOGGER.info("Organization find: id={}", id);
-		return repository.findById(id).get();
-	}
+    private final OrganizationService service;
 
-	@GetMapping("/{id}/with-departments")
-	public Organization findByIdWithDepartments(@PathVariable("id") String id) {
-		LOGGER.info("Organization find: id={}", id);
-		Optional<Organization> organization = repository.findById(id);
-		if (organization.isPresent()) {
-			Organization o = organization.get();
-			o.setDepartments(departmentClient.findByOrganization(o.getId()));
-			return o;
-		} else {
-			return null;
-		}
-	}
-	
-	@GetMapping("/{id}/with-departments-and-employees")
-	public Organization findByIdWithDepartmentsAndEmployees(@PathVariable("id") String id) {
-		LOGGER.info("Organization find: id={}", id);
-		Optional<Organization> organization = repository.findById(id);
-		if (organization.isPresent()) {
-			Organization o = organization.get();
-			o.setDepartments(departmentClient.findByOrganizationWithEmployees(o.getId()));
-			return o;
-		} else {
-			return null;
-		}
-	}
-	
-	@GetMapping("/{id}/with-employees")
-	public Organization findByIdWithEmployees(@PathVariable("id") String id) {
-		LOGGER.info("Organization find: id={}", id);
-		Optional<Organization> organization = repository.findById(id);
-		if (organization.isPresent()) {
-			Organization o = organization.get();
-			o.setEmployees(employeeClient.findByOrganization(o.getId()));
-			return o;
-		} else {
-			return null;
-		}
-	}
-	
+    public OrganizationController(OrganizationService service) {
+        this.service = service;
+    }
+
+    @PostMapping
+    @Operation(summary = "Cria uma organization")
+    public Organization add(@Valid @RequestBody Organization organization) {
+        return service.create(organization);
+    }
+
+    @GetMapping
+    @Operation(summary = "Lista todas as organizations")
+    public List<Organization> findAll() {
+        return service.findAll();
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Busca uma organization pelo id")
+    public Organization findById(@PathVariable("id") String id) {
+        return service.findById(id);
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Substitui uma organization existente")
+    public Organization update(@PathVariable("id") String id, @Valid @RequestBody Organization organization) {
+        return service.update(id, organization);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Remove uma organization")
+    public void delete(@PathVariable("id") String id) {
+        service.delete(id);
+    }
+
+    @GetMapping("/search")
+    @Operation(summary = "Busca paginada por nome (parcial), ordenada por nome")
+    public PageResponse<Organization> search(@RequestParam(name = "name", required = false) String name,
+                                             @RequestParam(name = "page", defaultValue = "0") int page,
+                                             @RequestParam(name = "size", defaultValue = "20") int size) {
+        return PageResponse.of(service.search(name, page, size));
+    }
+
+    @GetMapping("/count")
+    @Operation(summary = "Total de organizations")
+    public Map<String, Long> count() {
+        return Map.of("count", service.count());
+    }
+
+    @GetMapping("/{id}/summary")
+    @Operation(summary = "Resumo: quantidade de departments e employees (via Feign)")
+    public OrganizationSummary summary(@PathVariable("id") String id) {
+        return service.summary(id);
+    }
+
+    @GetMapping("/{id}/with-departments")
+    @Operation(summary = "Organization com seus departments")
+    public Organization findByIdWithDepartments(@PathVariable("id") String id) {
+        return service.findByIdWithDepartments(id);
+    }
+
+    @GetMapping("/{id}/with-departments-and-employees")
+    @Operation(summary = "Organization com departments e seus employees")
+    public Organization findByIdWithDepartmentsAndEmployees(@PathVariable("id") String id) {
+        return service.findByIdWithDepartmentsAndEmployees(id);
+    }
+
+    @GetMapping("/{id}/with-employees")
+    @Operation(summary = "Organization com todos os seus employees")
+    public Organization findByIdWithEmployees(@PathVariable("id") String id) {
+        return service.findByIdWithEmployees(id);
+    }
 }

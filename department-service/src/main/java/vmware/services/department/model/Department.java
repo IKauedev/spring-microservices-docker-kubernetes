@@ -1,5 +1,6 @@
 package vmware.services.department.model;
 
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -13,6 +14,7 @@ public class Department {
 	@Id
 	private String id;
 	private Long organizationId;
+	@NotBlank
 	private String name;
 	@Transient
 	private List<Employee> employees = new ArrayList<>();

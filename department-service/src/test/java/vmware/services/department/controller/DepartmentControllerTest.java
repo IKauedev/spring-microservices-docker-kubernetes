@@ -3,28 +3,36 @@ package vmware.services.department.controller;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import feign.FeignException;
+import feign.Request;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import vmware.services.department.client.EmployeeClient;
+import vmware.services.department.exception.GlobalExceptionHandler;
+import vmware.services.department.service.DepartmentService;
 import vmware.services.department.model.Department;
 import vmware.services.department.model.Employee;
 import vmware.services.department.repository.DepartmentRepository;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -38,14 +46,13 @@ class DepartmentControllerTest {
     @Mock
     EmployeeClient employeeClient;
 
-    @InjectMocks
-    DepartmentController controller;
-
     MockMvc mvc;
 
     @BeforeEach
     void setUp() {
-        mvc = MockMvcBuilders.standaloneSetup(controller).build();
+        DepartmentController controller = new DepartmentController(
+                new DepartmentService(repository, employeeClient), employeeClient);
+        mvc = MockMvcBuilders.standaloneSetup(controller).setControllerAdvice(new GlobalExceptionHandler()).build();
     }
 
     private static Department department(String id, Long organizationId, String name) {
@@ -86,12 +93,10 @@ class DepartmentControllerTest {
     }
 
     @Test
-    void findByIdOfUnknownDepartmentFailsWithNoSuchElement() {
+    void findByIdOfUnknownDepartmentReturns404() throws Exception {
         when(repository.findById("nope")).thenReturn(Optional.empty());
 
-        // comportamento atual: Optional.get() sem tratamento, que em runtime vira erro 500
-        assertThatThrownBy(() -> mvc.perform(get("/nope")))
-                .hasRootCauseInstanceOf(NoSuchElementException.class);
+        mvc.perform(get("/nope")).andExpect(status().isNotFound());
     }
 
     @Test
@@ -157,5 +162,116 @@ class DepartmentControllerTest {
         mvc.perform(get("/feign"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("Johns"));
+    }
+
+    @Test
+    void addRejectsABlankName() throws Exception {
+        mvc.perform(post("/").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"\",\"organizationId\":4}"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(repository);
+    }
+
+    @Test
+    void updateReplacesTheDepartmentKeepingTheIdFromTheUrl() throws Exception {
+        when(repository.existsById("1")).thenReturn(true);
+        when(repository.save(any(Department.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        mvc.perform(put("/1").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"id\":\"other\",\"name\":\"Sales\",\"organizationId\":4}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("1"))
+                .andExpect(jsonPath("$.name").value("Sales"));
+    }
+
+    @Test
+    void updateOfUnknownDepartmentReturns404() throws Exception {
+        when(repository.existsById("nope")).thenReturn(false);
+
+        mvc.perform(put("/nope").contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Sales\"}"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.detail").value("Department not found: nope"));
+
+        verify(repository, never()).save(any(Department.class));
+    }
+
+    @Test
+    void deleteRemovesTheDepartmentAndReturns204() throws Exception {
+        when(repository.existsById("1")).thenReturn(true);
+
+        mvc.perform(delete("/1")).andExpect(status().isNoContent());
+
+        verify(repository).deleteById("1");
+    }
+
+    @Test
+    void deleteOfUnknownDepartmentReturns404() throws Exception {
+        when(repository.existsById("nope")).thenReturn(false);
+
+        mvc.perform(delete("/nope")).andExpect(status().isNotFound());
+
+        verify(repository, never()).deleteById(any());
+    }
+
+    @Test
+    void findByIdWithEmployeesAsksTheEmployeeService() throws Exception {
+        when(repository.findById("d1")).thenReturn(Optional.of(department("d1", 4L, "RD")));
+        when(employeeClient.findByDepartment("d1")).thenReturn(List.of(new Employee("Smith", 25, "engineer")));
+
+        mvc.perform(get("/d1/with-employees"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("RD"))
+                .andExpect(jsonPath("$.employees[0].name").value("Smith"));
+    }
+
+    @Test
+    void findByIdWithEmployeesOfUnknownDepartmentReturns404WithoutCallingEmployeeService() throws Exception {
+        when(repository.findById("nope")).thenReturn(Optional.empty());
+
+        mvc.perform(get("/nope/with-employees")).andExpect(status().isNotFound());
+
+        verifyNoInteractions(employeeClient);
+    }
+
+    @Test
+    void employeeServiceFailureBecomes502() throws Exception {
+        when(repository.findById("d1")).thenReturn(Optional.of(department("d1", 4L, "RD")));
+        Request request = Request.create(Request.HttpMethod.GET, "http://employee/department/d1",
+                java.util.Map.of(), null, null, null);
+        when(employeeClient.findByDepartment("d1")).thenThrow(
+                new FeignException.InternalServerError("boom", request, null, null));
+
+        mvc.perform(get("/d1/with-employees"))
+                .andExpect(status().isBadGateway())
+                .andExpect(jsonPath("$.title").value("Downstream service error"));
+    }
+
+    @Test
+    void searchFiltersByNameAndPages() throws Exception {
+        Pageable pageable = PageRequest.of(0, 20, Sort.by("name"));
+        when(repository.findByNameContainingIgnoreCase("rd", pageable))
+                .thenReturn(new PageImpl<>(List.of(department("1", 4L, "RD")), pageable, 1));
+
+        mvc.perform(get("/search").param("name", "rd"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].name").value("RD"))
+                .andExpect(jsonPath("$.totalElements").value(1));
+    }
+
+    @Test
+    void searchWithoutNameListsEverything() throws Exception {
+        Pageable pageable = PageRequest.of(0, 20, Sort.by("name"));
+        when(repository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(), pageable, 0));
+
+        mvc.perform(get("/search")).andExpect(status().isOk()).andExpect(jsonPath("$.totalPages").value(0));
+    }
+
+    @Test
+    void countsDepartments() throws Exception {
+        when(repository.count()).thenReturn(5L);
+        when(repository.countByOrganizationId(4L)).thenReturn(2L);
+
+        mvc.perform(get("/count")).andExpect(jsonPath("$.count").value(5));
+        mvc.perform(get("/organization/4/count")).andExpect(jsonPath("$.count").value(2));
     }
 }

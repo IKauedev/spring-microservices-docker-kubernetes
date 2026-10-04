@@ -9,8 +9,6 @@ A small reference stack of four Spring Boot microservices — **Employee**, **De
 
 It exists mainly as a hands-on playground for the plumbing every microservice fleet needs: service discovery, client-side load balancing, externalized config, health probes, metrics, tracing and API docs — without any real business logic getting in the way.
 
-> This project is a fork of [AndriyKalashnykov/spring-microservices-k8s](https://github.com/AndriyKalashnykov/spring-microservices-k8s) (originally written for the Tanzu Development Center), migrated from Spring Boot 2.3 / Java 8-11 to **Spring Boot 4.1.1** and **Spring Cloud 2025.1 (Oakwood)** on **Java 17**. Netflix Zuul, Netflix Ribbon, Spring Cloud Sleuth and Springfox — all discontinued — were replaced with Spring Cloud Gateway, Spring Cloud LoadBalancer, Micrometer Tracing and springdoc-openapi respectively.
-
 ## Architecture
 
 ```mermaid
@@ -35,13 +33,13 @@ flowchart LR
     end
 ```
 
-Every service registers itself and discovers its peers through the Kubernetes API (`spring-cloud-kubernetes-fabric8`) — there is no Eureka, Consul or Zookeeper in this stack. The gateway routes requests purely by service name via Spring Cloud Gateway's discovery locator, so adding a fifth service to the cluster requires no gateway configuration change.
+Every service registers itself and discovers its peers through the Kubernetes API (`spring-cloud-kubernetes-fabric8`) — there is no Eureka, Consul or Zookeeper in this stack. The gateway routes requests through static routes declared in its `application.yml` (`/employee/**`, `/department/**`, `/organization/**`, each with `StripPrefix=1` pointing at the Service's cluster DNS name). The discovery locator is disabled: it kept stale routes (404) when a gateway pod started in the middle of a rollout. Adding a fifth service therefore means adding a route there.
 
 ## Services
 
 | Service               | Role                                            | Talks to                     | Docs (once running)         |
 |-----------------------|--------------------------------------------------|-------------------------------|------------------------------|
-| `gateway-service`     | Edge router / reverse proxy                      | all of the below (discovery)  | `/actuator`                  |
+| `gateway-service`     | Edge router / reverse proxy                      | all of the below (static routes) | `/actuator`                  |
 | `employee-service`    | CRUD for employees, backed by MongoDB            | —                              | `/swagger-ui.html`           |
 | `department-service`  | CRUD for departments; enriches with employee data| `employee-service` (Feign)     | `/swagger-ui.html`           |
 | `organization-service`| CRUD for organizations; enriches with dept/employee data | `department-service`, `employee-service` (Feign) | `/swagger-ui.html` |
@@ -70,7 +68,7 @@ All four expose Spring Boot Actuator on the same port as the app (`health`, `inf
 │   ├── lib/                # env.sh (nomes, namespaces) + common.sh (caminhos, use_cluster)
 │   ├── cluster/            # start, setup, stop, destroy, ip
 │   ├── deploy/             # build-app, build-push, install-*, delete-*
-│   ├── ops/                # logs, exec, populate-data, gateway-open
+│   ├── ops/                # logs, exec, populate-data, gateway-open, expose-all
 │   └── argocd/             # bootstrap, port-forward, password, status
 └── pom.xml                 # Reactor parent (aggregates the four modules)
 ```
@@ -117,6 +115,7 @@ cd scripts/
 ./deploy/install-all.sh   # build images and apply each app with kubectl apply -k
 ./ops/populate-data.sh    # seed sample employees/departments/organizations
 ./ops/gateway-open.sh     # open the Swagger UI through the gateway
+./ops/expose-all.sh       # expose every service on localhost (8080-8083, mongo 27017, Argo CD https://localhost:8443)
 ```
 
 Tear down with:
@@ -162,7 +161,7 @@ docker compose up --build
 Kubernetes service discovery isn't available outside a cluster, so this file disables
 `spring.cloud.kubernetes` and wires the same routing statically instead: Feign clients get their
 target services from Spring Cloud's Simple Discovery Client, and the gateway gets a fixed
-route per service instead of the discovery locator used in `k8s/gateway/configmap.yaml` of the gitops repo.
+route per service (`ROUTES_n_*`, overriding the cluster-DNS defaults declared in the gateway's `application.yml`).
 
 ## Talking to the API
 
@@ -176,6 +175,28 @@ curl -X POST "$EMPLOYEE_URL/" -H "Content-Type: application/json" \
 # read
 curl "$EMPLOYEE_URL/"
 ```
+
+### Endpoints
+
+Paths are relative to each service (through the gateway, prefix them with `/employee`, `/department` or `/organization`).
+
+| Service | Method & path | Description |
+|---------|---------------|-------------|
+| employee | `POST /`, `GET /`, `GET /{id}`, `PUT /{id}`, `DELETE /{id}` | CRUD (`DELETE` returns `204`) |
+| employee | `GET /search?name=&position=&page=&size=` | Paged search (name partial, position exact), sorted by name; `size` is capped at 100 |
+| employee | `GET /count`, `GET /stats` | Total; total + average age + count per position |
+| employee | `GET /department/{id}`, `GET /department/{id}/count`, `DELETE /department/{id}` | Per-department list, count and bulk delete |
+| employee | `GET /organization/{id}`, `GET /organization/{id}/count` | Per-organization list and count |
+| department | `POST /`, `GET /`, `GET /{id}`, `PUT /{id}`, `DELETE /{id}` | CRUD |
+| department | `GET /{id}/with-employees` | Department enriched with its employees (Feign) |
+| department | `GET /search?name=`, `GET /count` | Paged search and total |
+| department | `GET /organization/{id}`, `/organization/{id}/count`, `/organization/{id}/with-employees` | Per-organization queries |
+| organization | `POST /`, `GET /`, `GET /{id}`, `PUT /{id}`, `DELETE /{id}` | CRUD |
+| organization | `GET /{id}/summary` | Number of departments and employees (Feign) |
+| organization | `GET /{id}/with-departments`, `/with-employees`, `/with-departments-and-employees` | Enriched views (Feign) |
+| organization | `GET /search?name=`, `GET /count` | Paged search and total |
+
+Each service is layered `controller -> service -> repository` (plus `client` for Feign). Request bodies are validated (`name` must not be blank, employee `age` must be 0-150) and every error is returned as RFC 9457 `application/problem+json`: `400` for invalid input, `404` for unknown resources, `502` when a downstream service fails.
 
 See [`scripts/populate-data.sh`](scripts/populate-data.sh) for the full set of sample payloads across employee, department and organization.
 
