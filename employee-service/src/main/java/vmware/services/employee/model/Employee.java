@@ -1,5 +1,8 @@
 package vmware.services.employee.model;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -10,7 +13,10 @@ public class Employee {
     private String id;
     private Long organizationId;
     private Long departmentId;
+    @NotBlank
     private String name;
+    @Min(0)
+    @Max(150)
     private int age;
     private String position;
 
