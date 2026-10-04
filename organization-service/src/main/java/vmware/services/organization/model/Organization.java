@@ -1,5 +1,6 @@
 package vmware.services.organization.model;
 
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -11,6 +12,7 @@ public class Organization {
 
     @Id
     private String id;
+    @NotBlank
     private String name;
     private String address;
     private List<Department> departments = new ArrayList<>();
