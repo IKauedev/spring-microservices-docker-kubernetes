@@ -9,5 +9,28 @@ spring:
         webflux:
           discovery:
             locator:
-              enabled: true
-              lower-case-service-id: true
+              # rotas declaradas abaixo; a descoberta dinamica deixou o gateway com rotas
+              # desatualizadas (404) quando subia no meio de um rollout
+              enabled: false
+          # /employee/1 -> employee recebe /1 (o prefixo e removido)
+          # a URI padrao e o DNS do Service no cluster (<servico>.<namespace>); sobrescreva
+          # com EMPLOYEE_URI / DEPARTMENT_URI / ORGANIZATION_URI fora do Kubernetes
+          routes:
+            - id: employee
+              uri: ${EMPLOYEE_URI:http://employee.employee.svc.cluster.local:8080}
+              predicates:
+                - Path=/employee/**
+              filters:
+                - StripPrefix=1
+            - id: department
+              uri: ${DEPARTMENT_URI:http://department.department.svc.cluster.local:8080}
+              predicates:
+                - Path=/department/**
+              filters:
+                - StripPrefix=1
+            - id: organization
+              uri: ${ORGANIZATION_URI:http://organization.organization.svc.cluster.local:8080}
+              predicates:
+                - Path=/organization/**
+              filters:
+                - StripPrefix=1

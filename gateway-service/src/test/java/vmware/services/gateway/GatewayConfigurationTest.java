@@ -2,6 +2,8 @@ package vmware.services.gateway;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.config.YamlPropertiesFactoryBean;
 import org.springframework.core.io.ClassPathResource;
 
@@ -10,8 +12,8 @@ import java.util.Properties;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Protege o application.yml do gateway. No cluster as rotas vem do discovery locator
- * (/employee/**, /department/**, /organization/**): sem ele o gateway sobe, mas responde 404 em tudo.
+ * Protege o application.yml do gateway. As rotas sao declaradas (/employee/**, /department/**,
+ * /organization/**) e o discovery locator fica desligado: sem elas o gateway sobe, mas responde 404 em tudo.
  */
 class GatewayConfigurationTest {
 
@@ -30,11 +32,21 @@ class GatewayConfigurationTest {
     }
 
     @Test
-    void discoveryLocatorIsEnabledWithLowerCaseServiceIds() {
+    void discoveryLocatorIsDisabledBecauseRoutesAreDeclared() {
         assertThat(properties.getProperty("spring.cloud.gateway.server.webflux.discovery.locator.enabled"))
-                .isEqualTo("true");
-        assertThat(properties.getProperty("spring.cloud.gateway.server.webflux.discovery.locator.lower-case-service-id"))
-                .isEqualTo("true");
+                .isEqualTo("false");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"0,employee", "1,department", "2,organization"})
+    void declaresOneStaticRoutePerService(int index, String service) {
+        String route = "spring.cloud.gateway.server.webflux.routes[" + index + "].";
+
+        assertThat(properties.getProperty(route + "id")).isEqualTo(service);
+        assertThat(properties.getProperty(route + "uri"))
+                .contains("http://" + service + "." + service + ".svc.cluster.local:8080");
+        assertThat(properties.getProperty(route + "predicates[0]")).isEqualTo("Path=/" + service + "/**");
+        assertThat(properties.getProperty(route + "filters[0]")).isEqualTo("StripPrefix=1");
     }
 
     @Test
