@@ -62,6 +62,20 @@ expect "cria organization" "$(request POST "$BASE_URL/organization/" \
   "{\"id\":\"$RUN_ID\",\"name\":\"Acme\",\"address\":\"Main Street\"}")" "\"id\":\"$RUN_ID\""
 expect "organization com employees (Feign)" "$(request GET "$BASE_URL/organization/$RUN_ID/with-employees")" '"name":"Smith"'
 
+echo "== novos endpoints"
+expect "employee /count" "$(request GET "$BASE_URL/employee/count")" '"count"'
+expect "employee /stats" "$(request GET "$BASE_URL/employee/stats")" '"averageAge"'
+expect "employee /search" "$(request GET "$BASE_URL/employee/search?name=smi")" '"totalElements"'
+expect "department /count" "$(request GET "$BASE_URL/department/count")" '"count"'
+expect "department com employees" "$(request GET "$BASE_URL/department/$RUN_ID/with-employees")" '"name":"Smith"'
+expect "organization /summary" "$(request GET "$BASE_URL/organization/$RUN_ID/summary")" '"employeeCount"'
+expect "atualiza employee (PUT)" "$(request PUT "$BASE_URL/employee/$RUN_ID" \
+  "{\"name\":\"Smith Jr\",\"age\":26,\"position\":\"engineer\",\"departmentId\":$RUN_ID,\"organizationId\":$RUN_ID}")" '"name":"Smith Jr"'
+code=$(curl -s -o /dev/null -w '%{http_code}' -X DELETE "$BASE_URL/employee/$RUN_ID")
+if [ "$code" = "204" ]; then pass "remove employee (DELETE 204)"; else fail "remove employee (HTTP $code)"; fi
+code=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/employee/$RUN_ID")
+if [ "$code" = "404" ]; then pass "employee removido devolve 404"; else fail "employee removido (HTTP $code)"; fi
+
 echo
 if [ $FAILED -eq 0 ]; then echo "SMOKE TEST OK"; else echo "SMOKE TEST FALHOU"; fi
 exit $FAILED

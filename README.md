@@ -68,7 +68,7 @@ All four expose Spring Boot Actuator on the same port as the app (`health`, `inf
 │   ├── lib/                # env.sh (nomes, namespaces) + common.sh (caminhos, use_cluster)
 │   ├── cluster/            # start, setup, stop, destroy, ip
 │   ├── deploy/             # build-app, build-push, install-*, delete-*
-│   ├── ops/                # logs, exec, populate-data, gateway-open
+│   ├── ops/                # logs, exec, populate-data, gateway-open, expose-all
 │   └── argocd/             # bootstrap, port-forward, password, status
 └── pom.xml                 # Reactor parent (aggregates the four modules)
 ```
@@ -115,6 +115,7 @@ cd scripts/
 ./deploy/install-all.sh   # build images and apply each app with kubectl apply -k
 ./ops/populate-data.sh    # seed sample employees/departments/organizations
 ./ops/gateway-open.sh     # open the Swagger UI through the gateway
+./ops/expose-all.sh       # expose every service on localhost (8080-8083, mongo 27017)
 ```
 
 Tear down with:
@@ -174,6 +175,28 @@ curl -X POST "$EMPLOYEE_URL/" -H "Content-Type: application/json" \
 # read
 curl "$EMPLOYEE_URL/"
 ```
+
+### Endpoints
+
+Paths are relative to each service (through the gateway, prefix them with `/employee`, `/department` or `/organization`).
+
+| Service | Method & path | Description |
+|---------|---------------|-------------|
+| employee | `POST /`, `GET /`, `GET /{id}`, `PUT /{id}`, `DELETE /{id}` | CRUD (`DELETE` returns `204`) |
+| employee | `GET /search?name=&position=&page=&size=` | Paged search (name partial, position exact), sorted by name; `size` is capped at 100 |
+| employee | `GET /count`, `GET /stats` | Total; total + average age + count per position |
+| employee | `GET /department/{id}`, `GET /department/{id}/count`, `DELETE /department/{id}` | Per-department list, count and bulk delete |
+| employee | `GET /organization/{id}`, `GET /organization/{id}/count` | Per-organization list and count |
+| department | `POST /`, `GET /`, `GET /{id}`, `PUT /{id}`, `DELETE /{id}` | CRUD |
+| department | `GET /{id}/with-employees` | Department enriched with its employees (Feign) |
+| department | `GET /search?name=`, `GET /count` | Paged search and total |
+| department | `GET /organization/{id}`, `/organization/{id}/count`, `/organization/{id}/with-employees` | Per-organization queries |
+| organization | `POST /`, `GET /`, `GET /{id}`, `PUT /{id}`, `DELETE /{id}` | CRUD |
+| organization | `GET /{id}/summary` | Number of departments and employees (Feign) |
+| organization | `GET /{id}/with-departments`, `/with-employees`, `/with-departments-and-employees` | Enriched views (Feign) |
+| organization | `GET /search?name=`, `GET /count` | Paged search and total |
+
+Each service is layered `controller -> service -> repository` (plus `client` for Feign). Request bodies are validated (`name` must not be blank, employee `age` must be 0-150) and every error is returned as RFC 9457 `application/problem+json`: `400` for invalid input, `404` for unknown resources, `502` when a downstream service fails.
 
 See [`scripts/populate-data.sh`](scripts/populate-data.sh) for the full set of sample payloads across employee, department and organization.
 
