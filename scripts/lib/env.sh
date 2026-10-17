@@ -11,7 +11,7 @@ export NAMESPACE_MONGO=mongo
 export SA_NAME=api-service-account
 
 # perfil do Minikube e ambiente (overlay do gitops: dev | prod); sobrescreva por variavel de ambiente
-export CLUSTER1_NAME=${CLUSTER1_NAME:-minikube-cluster-1}
+export CLUSTER1_NAME=${CLUSTER1_NAME:-kubernetes-student}
 export ENV_NAME=${ENV_NAME:-dev}
 
 # minikube driver (docker works on Windows/macOS/Linux; override with e.g. MINIKUBE_DRIVER=virtualbox)

@@ -6,6 +6,7 @@
 #   organization http://localhost:8083
 #   mongodb      localhost:27017
 #   argocd       https://localhost:8443  (usuario: admin | senha: ./scripts/argocd/password.sh)
+#   chaos-mesh   http://localhost:2333
 # Se o pod for recriado (ex.: rollout), o port-forward reconecta sozinho.
 
 . "$(dirname "${BASH_SOURCE[0]}")/../lib/common.sh"
@@ -51,7 +52,7 @@ forward() {
 
 # falha logo se alguma porta ja estiver ocupada (ex.: port-forward de uma execucao anterior)
 busy=0
-for port in 8080 8081 8082 8083 27017 8443; do
+for port in 8080 8081 8082 8083 27017 8443 2333; do
   if port_busy "$port"; then echo "ERRO: a porta $port ja esta em uso." >&2; busy=1; fi
 done
 if [ $busy -eq 1 ]; then
@@ -66,7 +67,9 @@ forward "$NAMESPACE_DEPARTMENT"   department   8082 8080
 forward "$NAMESPACE_ORGANIZATION" organization 8083 8080
 forward "$NAMESPACE_MONGO"        mongodb      27017 27017
 forward argocd                    argocd-server 8443 443
+forward chaos-mesh                chaos-dashboard 2333 2333
 
 echo "Argo CD: https://localhost:8443 (admin / senha: ./scripts/argocd/password.sh)"
+echo "Chaos Mesh: http://localhost:2333"
 echo "Pronto. Ctrl+C para encerrar. Logs de erro: $WORK_DIR/<servico>.log"
 wait
